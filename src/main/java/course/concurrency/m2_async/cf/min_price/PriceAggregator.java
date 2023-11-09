@@ -21,20 +21,13 @@ public class PriceAggregator {
     }
 
     public double getMinPrice(long itemId) {
-        try {
-            ExecutorService executor = Executors.newCachedThreadPool();
-            List<CompletableFuture<Double>> completableFutures = shopIds.stream()
-                    .map(shopId -> CompletableFuture.supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), executor)
-                            .exceptionally(throwable -> Double.NaN))
-                    .collect(Collectors.toList());
-            executor.shutdown();
-            executor.awaitTermination(2900, TimeUnit.MILLISECONDS);
-            return completableFutures.stream()
-                    .filter(CompletableFuture::isDone)
-                    .map(CompletableFuture::join)
-                    .min(Double::compareTo).orElse(Double.NaN);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        ExecutorService executor = Executors.newFixedThreadPool(shopIds.size());
+        List<CompletableFuture<Double>> completableFutures = shopIds.stream()
+                .map(shopId -> CompletableFuture.supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), executor)
+                        .orTimeout(2900, TimeUnit.MILLISECONDS).exceptionally(throwable -> Double.NaN))
+                .collect(Collectors.toList());
+        return completableFutures.stream()
+                .map(CompletableFuture::join)
+                .min(Double::compareTo).orElse(Double.NaN);
     }
 }
