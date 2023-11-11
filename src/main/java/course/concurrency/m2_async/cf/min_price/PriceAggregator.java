@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 public class PriceAggregator {
 
+    private final ExecutorService executor = Executors.newCachedThreadPool();
     private PriceRetriever priceRetriever = new PriceRetriever();
 
     public void setPriceRetriever(PriceRetriever priceRetriever) {
@@ -21,7 +22,6 @@ public class PriceAggregator {
     }
 
     public double getMinPrice(long itemId) {
-        ExecutorService executor = Executors.newFixedThreadPool(shopIds.size());
         List<CompletableFuture<Double>> completableFutures = shopIds.stream()
                 .map(shopId -> CompletableFuture.supplyAsync(() -> priceRetriever.getPrice(itemId, shopId), executor)
                         .orTimeout(2900, TimeUnit.MILLISECONDS).exceptionally(throwable -> Double.NaN))
