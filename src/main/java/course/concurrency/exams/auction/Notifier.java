@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Notifier {
-    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    private final ExecutorService executor = Executors.newFixedThreadPool(5000);
 
     public void sendOutdatedMessage(Bid bid) {
         executor.submit(this::imitateSending);
