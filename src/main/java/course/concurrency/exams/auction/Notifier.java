@@ -16,5 +16,7 @@ public class Notifier {
         } catch (InterruptedException e) {}
     }
 
-    public void shutdown() {}
+    public void shutdown() {
+        executor.shutdownNow();
+    }
 }
