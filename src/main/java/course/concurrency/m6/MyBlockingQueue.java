@@ -39,4 +39,8 @@ public class MyBlockingQueue<T> {
         notifyAll();
         return (T) array[indexOut];
     }
+
+    public int getSize() {
+        return size;
+    }
 }
