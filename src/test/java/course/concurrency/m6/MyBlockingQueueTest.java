@@ -42,7 +42,8 @@ class MyBlockingQueueTest {
 
     @Test
     void loadTest() throws InterruptedException {
-        int count = 5000;
+        int count = 50;
+        int iterations = 10_000;
         CountDownLatch latch = new CountDownLatch(1);
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -53,7 +54,9 @@ class MyBlockingQueueTest {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                queue.enqueue(1);
+                for (int j = 0; j < iterations; j++) {
+                    queue.enqueue(1);
+                }
             });
             executorService.execute(() -> {
                 try {
@@ -61,7 +64,9 @@ class MyBlockingQueueTest {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                queue.dequeue();
+                for (int j = 0; j < iterations; j++) {
+                    queue.dequeue();
+                }
             });
         }
         latch.countDown();
