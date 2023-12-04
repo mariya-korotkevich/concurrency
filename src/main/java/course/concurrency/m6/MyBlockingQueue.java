@@ -40,7 +40,7 @@ public class MyBlockingQueue<T> {
         return (T) array[indexOut];
     }
 
-    public int getSize() {
+    public synchronized int getSize() {
         return size;
     }
 }
