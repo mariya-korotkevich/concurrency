@@ -78,9 +78,10 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
-        verify(mockedService).log("Not all router admins updated their cache");
         verify(mockedService).log("Mount table entries cache refresh successCount=0,failureCount=4");
         verify(routerClientsCache, times(4)).invalidate(anyString());
+
+        verify(mockedService, never()).log("Not all router admins updated their cache");
     }
 
     @Test
@@ -102,9 +103,10 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
-        verify(mockedService).log("Not all router admins updated their cache");
         verify(mockedService).log("Mount table entries cache refresh successCount=2,failureCount=2");
         verify(routerClientsCache, times(2)).invalidate(anyString());
+
+        verify(mockedService, never()).log("Not all router admins updated their cache");
     }
 
     @Test
@@ -131,9 +133,10 @@ public class MountTableRefresherServiceTests {
         mockedService.refresh();
 
         // then
-        verify(mockedService).log("Not all router admins updated their cache");
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
         verify(routerClientsCache, times(1)).invalidate(anyString());
+
+        verify(mockedService, never()).log("Not all router admins updated their cache");
     }
 
     @Test
@@ -165,6 +168,36 @@ public class MountTableRefresherServiceTests {
         verify(mockedService).log("Not all router admins updated their cache");
         verify(mockedService).log("Mount table entries cache refresh successCount=3,failureCount=1");
         verify(routerClientsCache, times(1)).invalidate(anyString());
+    }
+
+    @Test
+    @DisplayName("Current thread is interrupted")
+    public void currentThreadIsInterrupted() {
+        // given
+        MountTableRefresherService mockedService = Mockito.spy(service);
+        List<String> addresses = List.of("123", "local6", "789", "local");
+
+        Thread currentThread = Thread.currentThread();
+
+        when(manager.refresh()).thenAnswer(inv -> {
+            currentThread.interrupt();
+            Thread.sleep(100);
+            return true;
+        });
+
+        List<Others.RouterState> states = addresses.stream()
+                .map(Others.RouterState::new).collect(toList());
+        when(routerStore.getCachedRecords()).thenReturn(states);
+
+        when(mockedService.createTableManager(anyString())).thenReturn(manager);
+
+        // when
+        mockedService.refresh();
+
+        // then
+        verify(mockedService).log("Mount table cache refresher was interrupted.");
+
+        verify(mockedService, never()).log("Not all router admins updated their cache");
     }
 
 }

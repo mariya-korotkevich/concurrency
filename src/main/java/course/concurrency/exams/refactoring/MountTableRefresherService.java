@@ -93,8 +93,7 @@ public class MountTableRefresherService {
         Map<String, CompletableFuture<Boolean>> futures = managers.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 entry -> CompletableFuture.supplyAsync(() -> entry.getValue().refresh())
-                        .completeOnTimeout(false, cacheUpdateTimeout, TimeUnit.MILLISECONDS)
-                        .exceptionally(throwable -> false)));
+                        .orTimeout(cacheUpdateTimeout, TimeUnit.MILLISECONDS)));
         logResult(futures);
     }
 
@@ -105,17 +104,30 @@ public class MountTableRefresherService {
     private void logResult(Map<String, CompletableFuture<Boolean>> futures) {
         int successCount = 0;
         int failureCount = 0;
+        boolean isInterrupted = false;
+        boolean notAllUpdated = false;
         for (var entry : futures.entrySet()) {
-            if (Boolean.TRUE.equals(entry.getValue().join())) {
-                successCount++;
-            } else {
-                failureCount++;
-                // remove RouterClient from cache so that new client is created
-                removeFromCache(entry.getKey());
+            try {
+                if (Boolean.TRUE.equals(entry.getValue().get())) {
+                    successCount++;
+                    continue;
+                }
+            } catch (InterruptedException e) {
+                isInterrupted = true;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof TimeoutException) {
+                    notAllUpdated = true;
+                }
             }
+            failureCount++;
+            // remove RouterClient from cache so that new client is created
+            removeFromCache(entry.getKey());
         }
-        if (failureCount != 0) {
+        if (notAllUpdated) {
             log("Not all router admins updated their cache");
+        }
+        if (isInterrupted) {
+            log("Mount table cache refresher was interrupted.");
         }
         log(String.format(
                 "Mount table entries cache refresh successCount=%d,failureCount=%d",
