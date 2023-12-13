@@ -3,7 +3,7 @@ package course.concurrency.m6;
 public class MyBlockingQueue<T> {
     private final Object[] array;
     private final int capacity;
-    private int size = 0;
+    private volatile int size = 0;
     private int indexIn = -1;
     private int indexOut = -1;
 
@@ -40,7 +40,7 @@ public class MyBlockingQueue<T> {
         return (T) array[indexOut];
     }
 
-    public synchronized int getSize() {
+    public int getSize() {
         return size;
     }
 }
