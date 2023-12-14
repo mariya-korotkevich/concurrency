@@ -16,28 +16,28 @@ public final class Order {
     private final boolean isPacked;
     private final Status status;
 
-    public static Order newOrder(long id, List<Item> items) {
-        return new Order(id, items, null, false, NEW);
-    }
-
-    public static Order updatedOrder(Order order, PaymentInfo paymentInfo) {
-        return new Order(order.id, order.items, paymentInfo, order.isPacked, IN_PROGRESS);
-    }
-
-    public static Order updatedOrder(Order order, boolean isPacked) {
-        return new Order(order.id, order.items, order.paymentInfo, isPacked, IN_PROGRESS);
-    }
-
-    public static Order updatedOrder(Order order, Status status) {
-        return new Order(order.id, order.items, order.paymentInfo, order.isPacked, status);
+    public Order(Long id, List<Item> items) {
+        this(id, items, null, false, NEW);
     }
 
     private Order(Long id, List<Item> items, PaymentInfo paymentInfo, boolean isPacked, Status status) {
         this.id = id;
-        this.items = items;
+        this.items = Collections.unmodifiableList(items);
         this.paymentInfo = paymentInfo;
         this.isPacked = isPacked;
         this.status = status;
+    }
+
+    public Order withPaymentInfo(PaymentInfo paymentInfo) {
+        return new Order(this.id, this.items, paymentInfo, this.isPacked, IN_PROGRESS);
+    }
+
+    public Order withIsPacked(boolean isPacked) {
+        return new Order(this.id, this.items, this.paymentInfo, isPacked, IN_PROGRESS);
+    }
+
+    public Order withStatus(Status status) {
+        return new Order(this.id, this.items, this.paymentInfo, this.isPacked, status);
     }
 
     public boolean checkStatus() {
@@ -49,7 +49,7 @@ public final class Order {
     }
 
     public List<Item> getItems() {
-        return Collections.unmodifiableList(items);
+        return items;
     }
 
     public PaymentInfo getPaymentInfo() {

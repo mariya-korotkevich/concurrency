@@ -16,32 +16,26 @@ public class OrderService {
 
     public long createOrder(List<Item> items) {
         long id = nextId();
-        currentOrders.put(id, Order.newOrder(id, items));
+        currentOrders.put(id, new Order(id, items));
         return id;
     }
 
     public void updatePaymentInfo(long orderId, PaymentInfo paymentInfo) {
-        currentOrders.compute(orderId, (id, order) -> Order.updatedOrder(order, paymentInfo));
-        if (currentOrders.get(orderId).checkStatus()) {
-            deliver(currentOrders.get(orderId));
+        Order updatedOrder = currentOrders.compute(orderId, (id, order) -> order.withPaymentInfo(paymentInfo));
+        if (updatedOrder.checkStatus()) {
+            deliver(updatedOrder);
         }
     }
 
     public void setPacked(long orderId) {
-        currentOrders.compute(orderId, (id, order) -> Order.updatedOrder(order, true));
-        if (currentOrders.get(orderId).checkStatus()) {
-            deliver(currentOrders.get(orderId));
+        Order updatedOrder = currentOrders.compute(orderId, (id, order) -> order.withIsPacked(true));
+        if (updatedOrder.checkStatus()) {
+            deliver(updatedOrder);
         }
     }
 
     private void deliver(Order order) {
-        currentOrders.compute(order.getId(), (id, currentOrder) -> {
-            if (currentOrder.getStatus().equals(Order.Status.DELIVERED)) {
-                return currentOrder;
-            } else {
-                return Order.updatedOrder(currentOrder, Order.Status.DELIVERED);
-            }
-        });
+        currentOrders.compute(order.getId(), (id, currentOrder) -> currentOrder.withStatus(Order.Status.DELIVERED));
     }
 
     public boolean isDelivered(long orderId) {
